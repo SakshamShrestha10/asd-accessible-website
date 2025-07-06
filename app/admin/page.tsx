@@ -258,6 +258,26 @@ export default function AdminPage() {
   const [editingCopingStrategy, setEditingCopingStrategy] = useState(null);
   const [loadingCopingStrategies, setLoadingCopingStrategies] = useState(false);
   const [copingStrategyError, setCopingStrategyError] = useState("");
+  const [assessments, setAssessments] = useState([]);
+  const [assessmentForm, setAssessmentForm] = useState({
+    id: null,
+    title: "",
+    description: "",
+    type: "",
+    category: "",
+    questions: [],
+    instructions: "",
+    duration: "",
+    difficulty: "",
+    icon: "",
+    color: "",
+    is_active: true,
+    sort_order: 0,
+  });
+  const [showAssessmentForm, setShowAssessmentForm] = useState(false);
+  const [editingAssessment, setEditingAssessment] = useState(null);
+  const [loadingAssessments, setLoadingAssessments] = useState(false);
+  const [assessmentError, setAssessmentError] = useState("");
 
   // Fetch data on component mount
   useEffect(() => {
@@ -979,6 +999,7 @@ export default function AdminPage() {
   // Fetch on tab open
   useEffect(() => {
     if (activeTab === "coping") fetchCopingStrategies();
+    if (activeTab === "assessments") fetchAssessments();
     // eslint-disable-next-line
   }, [activeTab]);
 
@@ -1059,6 +1080,97 @@ export default function AdminPage() {
     }
   };
 
+  // Fetch assessments
+  const fetchAssessments = async () => {
+    setLoadingAssessments(true);
+    setAssessmentError("");
+    try {
+      const res = await fetch("/api/admin/assessments");
+      if (!res.ok) throw new Error("Failed to fetch assessments");
+      const data = await res.json();
+      setAssessments(data.assessments || []);
+    } catch (e: any) {
+      setAssessmentError(e.message || "Error loading assessments");
+    } finally {
+      setLoadingAssessments(false);
+    }
+  };
+
+  // Handle form changes
+  const handleAssessmentFormChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setAssessmentForm((prev: any) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Handle create or update
+  const handleAssessmentSubmit = async (e: any) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setAssessmentError("");
+    try {
+      const method = editingAssessment ? "PUT" : "POST";
+      const res = await fetch("/api/admin/assessments", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(assessmentForm),
+      });
+      if (!res.ok) throw new Error("Failed to save assessment");
+      setShowAssessmentForm(false);
+      setEditingAssessment(null);
+      setAssessmentForm({
+        id: null,
+        title: "",
+        description: "",
+        type: "",
+        category: "",
+        questions: [],
+        instructions: "",
+        duration: "",
+        difficulty: "",
+        icon: "",
+        color: "",
+        is_active: true,
+        sort_order: 0,
+      });
+      fetchAssessments();
+      toast.success("Assessment saved");
+    } catch (e: any) {
+      setAssessmentError(e.message || "Error saving assessment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit
+  const handleEditAssessment = (assessment: any) => {
+    setEditingAssessment(assessment);
+    setAssessmentForm({ ...assessment });
+    setShowAssessmentForm(true);
+  };
+
+  // Handle delete
+  const handleDeleteAssessment = async (id: number) => {
+    if (!confirm("Delete this assessment?")) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/assessments", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete assessment");
+      fetchAssessments();
+      toast.success("Assessment deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Error deleting assessment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -1116,7 +1228,6 @@ export default function AdminPage() {
             <TabsTrigger value="activities">Activities</TabsTrigger>
             <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="coping">Coping Strategies</TabsTrigger>
-            <TabsTrigger value="faqs">Help FAQs</TabsTrigger>
             <TabsTrigger value="assessments">Assessments</TabsTrigger>
             <TabsTrigger value="communication">Communication Tools</TabsTrigger>
           </TabsList>
@@ -2889,26 +3000,307 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="faqs">
-            <Card>
-              <CardHeader>
-                <CardTitle>Help FAQs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Manage FAQs here. (CRUD UI coming soon)</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
           <TabsContent value="assessments">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Assessment Types & Questions</CardTitle>
+                <Button
+                  onClick={() => {
+                    setShowAssessmentForm(true);
+                    setEditingAssessment(null);
+                    setAssessmentForm({
+                      id: null,
+                      title: "",
+                      description: "",
+                      type: "",
+                      category: "",
+                      questions: [],
+                      instructions: "",
+                      duration: "",
+                      difficulty: "",
+                      icon: "",
+                      color: "",
+                      is_active: true,
+                      sort_order: 0,
+                    });
+                  }}
+                >
+                  + Add Assessment
+                </Button>
               </CardHeader>
               <CardContent>
-                <p>
-                  Manage assessment types and questions here. (CRUD UI coming
-                  soon)
-                </p>
+                {assessmentError && (
+                  <div className="text-red-600 mb-2">{assessmentError}</div>
+                )}
+                {loadingAssessments ? (
+                  <div className="py-8 text-center text-slate-500">
+                    Loading...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border text-sm">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="p-2 border">Title</th>
+                          <th className="p-2 border">Type</th>
+                          <th className="p-2 border">Category</th>
+                          <th className="p-2 border">Duration</th>
+                          <th className="p-2 border">Difficulty</th>
+                          <th className="p-2 border">Questions</th>
+                          <th className="p-2 border">Active</th>
+                          <th className="p-2 border">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {assessments.map((assessment: any) => (
+                          <tr key={assessment.id} className="border-b">
+                            <td className="p-2 border font-medium">
+                              {assessment.title}
+                            </td>
+                            <td className="p-2 border">
+                              <Badge
+                                variant={
+                                  assessment.type === "screening"
+                                    ? "default"
+                                    : assessment.type === "diagnostic"
+                                    ? "secondary"
+                                    : "outline"
+                                }
+                              >
+                                {assessment.type}
+                              </Badge>
+                            </td>
+                            <td className="p-2 border">
+                              <Badge variant="outline">
+                                {assessment.category}
+                              </Badge>
+                            </td>
+                            <td className="p-2 border">
+                              {assessment.duration}
+                            </td>
+                            <td className="p-2 border">
+                              {assessment.difficulty}
+                            </td>
+                            <td className="p-2 border text-center">
+                              {assessment.questions?.length || 0}
+                            </td>
+                            <td className="p-2 border text-center">
+                              {assessment.is_active ? "Yes" : "No"}
+                            </td>
+                            <td className="p-2 border text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditAssessment(assessment)}
+                                className="mr-2"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handleDeleteAssessment(assessment.id)
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Form for add/edit */}
+                {showAssessmentForm && (
+                  <form
+                    onSubmit={handleAssessmentSubmit}
+                    className="mt-8 space-y-4 bg-slate-50 p-6 rounded-lg border"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Title</Label>
+                        <Input
+                          name="title"
+                          value={assessmentForm.title}
+                          onChange={handleAssessmentFormChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label>Type</Label>
+                        <Select
+                          name="type"
+                          value={assessmentForm.type}
+                          onValueChange={(value) =>
+                            setAssessmentForm((prev) => ({
+                              ...prev,
+                              type: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="screening">Screening</SelectItem>
+                            <SelectItem value="diagnostic">
+                              Diagnostic
+                            </SelectItem>
+                            <SelectItem value="progress">
+                              Progress Tracking
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Category</Label>
+                        <Select
+                          name="category"
+                          value={assessmentForm.category}
+                          onValueChange={(value) =>
+                            setAssessmentForm((prev) => ({
+                              ...prev,
+                              category: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="autism">Autism</SelectItem>
+                            <SelectItem value="sensory">
+                              Sensory Processing
+                            </SelectItem>
+                            <SelectItem value="communication">
+                              Communication
+                            </SelectItem>
+                            <SelectItem value="mental_health">
+                              Mental Health
+                            </SelectItem>
+                            <SelectItem value="cognitive">Cognitive</SelectItem>
+                            <SelectItem value="behavioral">
+                              Behavioral
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Duration</Label>
+                        <Input
+                          name="duration"
+                          value={assessmentForm.duration}
+                          onChange={handleAssessmentFormChange}
+                          placeholder="e.g., 10-15 minutes"
+                        />
+                      </div>
+                      <div>
+                        <Label>Difficulty</Label>
+                        <Select
+                          name="difficulty"
+                          value={assessmentForm.difficulty}
+                          onValueChange={(value) =>
+                            setAssessmentForm((prev) => ({
+                              ...prev,
+                              difficulty: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select difficulty" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Easy">Easy</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Hard">Hard</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Icon</Label>
+                        <Input
+                          name="icon"
+                          value={assessmentForm.icon}
+                          onChange={handleAssessmentFormChange}
+                          placeholder="e.g., ClipboardCheck, Brain, Heart"
+                        />
+                      </div>
+                      <div>
+                        <Label>Color</Label>
+                        <Input
+                          name="color"
+                          value={assessmentForm.color}
+                          onChange={handleAssessmentFormChange}
+                          placeholder="e.g., blue, green, purple"
+                        />
+                      </div>
+                      <div>
+                        <Label>Sort Order</Label>
+                        <Input
+                          name="sort_order"
+                          type="number"
+                          value={assessmentForm.sort_order}
+                          onChange={handleAssessmentFormChange}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-6">
+                        <input
+                          type="checkbox"
+                          name="is_active"
+                          checked={assessmentForm.is_active}
+                          onChange={handleAssessmentFormChange}
+                          id="assessment_is_active"
+                        />
+                        <Label htmlFor="assessment_is_active">Active</Label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        name="description"
+                        value={assessmentForm.description}
+                        onChange={handleAssessmentFormChange}
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label>Instructions</Label>
+                      <Textarea
+                        name="instructions"
+                        value={assessmentForm.instructions}
+                        onChange={handleAssessmentFormChange}
+                        rows={3}
+                        placeholder="Instructions for taking the assessment"
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {submitting
+                          ? "Saving..."
+                          : editingAssessment
+                          ? "Update"
+                          : "Create"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowAssessmentForm(false);
+                          setEditingAssessment(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
