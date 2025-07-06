@@ -1327,6 +1327,18 @@ export default function AdminPage() {
               >
                 System Healthy
               </Badge>
+              <Button asChild variant="outline">
+                <a href="/">Back to Home</a>
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  window.location.href = "/";
+                }}
+              >
+                Logout
+              </Button>
             </div>
           </div>
         </div>
@@ -2191,12 +2203,48 @@ export default function AdminPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          {user.is_admin ? (
+                            <Button variant="secondary" size="sm" disabled>
+                              Admin
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  setSubmitting(true);
+                                  const res = await fetch("/api/admin/users", {
+                                    method: "PATCH",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      userId: user.id,
+                                      is_admin: true,
+                                    }),
+                                  });
+                                  if (!res.ok)
+                                    throw new Error(
+                                      "Failed to make user admin"
+                                    );
+                                  toast.success("User granted admin access");
+                                  // Refresh user list
+                                  const usersResponse = await fetch(
+                                    "/api/admin/users"
+                                  );
+                                  const usersData = await usersResponse.json();
+                                  setUsers(usersData.users || []);
+                                } catch (err) {
+                                  toast.error("Failed to make user admin");
+                                } finally {
+                                  setSubmitting(false);
+                                }
+                              }}
+                            >
+                              Make Admin
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}

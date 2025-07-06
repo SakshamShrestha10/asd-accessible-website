@@ -113,6 +113,21 @@ export default function AssessmentPage() {
       ? ((currentQuestion + 1) / currentQuestions.length) * 100
       : 0;
 
+  const getColorClasses = (color: string) => {
+    const colorMap = {
+      blue: "bg-blue-100 text-blue-600",
+      green: "bg-green-100 text-green-600",
+      purple: "bg-purple-100 text-purple-600",
+      orange: "bg-orange-100 text-orange-600",
+      teal: "bg-teal-100 text-teal-600",
+      indigo: "bg-indigo-100 text-indigo-600",
+      red: "bg-red-100 text-red-600",
+      pink: "bg-pink-100 text-pink-600",
+      yellow: "bg-yellow-100 text-yellow-600",
+    };
+    return colorMap[color as keyof typeof colorMap] || colorMap.blue;
+  };
+
   if (isComplete) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -208,11 +223,11 @@ export default function AssessmentPage() {
                   >
                     <CardHeader>
                       <div
-                        className={`w-12 h-12 bg-${assessment.color}-100 rounded-lg flex items-center justify-center mb-3`}
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center mb-3 ${getColorClasses(
+                          assessment.color
+                        )}`}
                       >
-                        <FileText
-                          className={`h-6 w-6 text-${assessment.color}-600`}
-                        />
+                        <FileText className="h-6 w-6" />
                       </div>
                       <CardTitle className="text-lg font-medium text-slate-800">
                         {assessment.title}

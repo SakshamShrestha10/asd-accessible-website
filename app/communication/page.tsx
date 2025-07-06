@@ -19,6 +19,36 @@ import {
   Download,
   Share,
   Loader2,
+  Heart,
+  Home,
+  Play,
+  HelpCircle,
+  Check,
+  X,
+  Music,
+  Book,
+  Gamepad2,
+  Phone,
+  Mail,
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Settings,
+  Star,
+  Plus,
+  Minus,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Utensils,
+  Coffee,
+  Bed,
+  Smile,
+  Frown,
+  AlertCircle,
+  Activity,
+  Zap,
 } from "lucide-react";
 import Navigation from "@/components/navigation";
 import Link from "next/link";
@@ -122,6 +152,62 @@ export default function CommunicationPage() {
     return selectedTexts.join(". ");
   };
 
+  const getIconComponent = (iconName: string) => {
+    const iconMap: Record<string, any> = {
+      Heart,
+      Home,
+      Play,
+      HelpCircle,
+      Check,
+      X,
+      Music,
+      Book,
+      Gamepad2,
+      Phone,
+      Mail,
+      Calendar,
+      Clock,
+      MapPin,
+      Users,
+      Settings,
+      Star,
+      Plus,
+      Minus,
+      ArrowRight,
+      ArrowUp,
+      ArrowDown,
+      Utensils,
+      Coffee,
+      Bed,
+      Smile,
+      Frown,
+      AlertCircle,
+      Activity,
+      Zap,
+      Volume2,
+      Type,
+      ImageIcon,
+      Download,
+      Share,
+    };
+    return iconMap[iconName] || Heart;
+  };
+
+  const getColorClasses = (color: string) => {
+    const colorMap = {
+      blue: "bg-blue-100 text-blue-600",
+      green: "bg-green-100 text-green-600",
+      purple: "bg-purple-100 text-purple-600",
+      orange: "bg-orange-100 text-orange-600",
+      teal: "bg-teal-100 text-teal-600",
+      indigo: "bg-indigo-100 text-indigo-600",
+      red: "bg-red-100 text-red-600",
+      pink: "bg-pink-100 text-pink-600",
+      yellow: "bg-yellow-100 text-yellow-600",
+    };
+    return colorMap[color as keyof typeof colorMap] || colorMap.blue;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -204,7 +290,7 @@ export default function CommunicationPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="cards" className="space-y-6">
+          <TabsContent value="cards" className="space-y-10">
             {/* Selected Cards Display */}
             {selectedCards.length > 0 && (
               <Card className="border-2 border-blue-200 bg-blue-50">
@@ -242,35 +328,48 @@ export default function CommunicationPage() {
             )}
 
             {/* Communication Cards by Category */}
-            <div className="space-y-8">
+            <div className="space-y-12">
               {Object.entries(cardsByCategory).map(
                 ([category, categoryCards]) => (
                   <div key={category}>
-                    <h3 className="text-xl font-medium text-slate-800 mb-4 capitalize">
+                    <h3 className="text-2xl font-semibold text-slate-800 mb-6 capitalize tracking-tight border-b border-slate-200 pb-2">
                       {category.replace("_", " ")}
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                      {categoryCards.map((card) => (
-                        <Button
-                          key={card.id}
-                          onClick={() => toggleCard(card.id.toString())}
-                          variant={
-                            selectedCards.includes(card.id.toString())
-                              ? "default"
-                              : "outline"
-                          }
-                          className={`h-24 flex flex-col items-center justify-center gap-2 text-center p-2 ${
-                            selectedCards.includes(card.id.toString())
-                              ? `bg-${card.color}-600 hover:bg-${card.color}-700 text-white`
-                              : "bg-white hover:bg-slate-50"
-                          }`}
-                        >
-                          <span className="text-2xl">{card.icon}</span>
-                          <span className="text-xs leading-tight">
-                            {card.content}
-                          </span>
-                        </Button>
-                      ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                      {categoryCards.map((card) => {
+                        const Icon = getIconComponent(card.icon);
+                        const isSelected = selectedCards.includes(
+                          card.id.toString()
+                        );
+                        return (
+                          <button
+                            key={card.id}
+                            onClick={() => toggleCard(card.id.toString())}
+                            className={`group flex flex-col items-center justify-center h-40 w-full rounded-2xl border-2 transition-all duration-200 shadow-sm px-4 py-6 bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer relative overflow-hidden
+                              ${
+                                isSelected
+                                  ? `border-blue-600 ring-2 ring-blue-200 bg-blue-50`
+                                  : "border-slate-200"
+                              }
+                            `}
+                            aria-pressed={isSelected}
+                          >
+                            <span
+                              className={`flex items-center justify-center mb-3 rounded-full transition-all duration-200 ${
+                                isSelected
+                                  ? getColorClasses(card.color)
+                                  : "bg-slate-100 text-slate-400"
+                              }`}
+                              style={{ width: 48, height: 48 }}
+                            >
+                              <Icon className="h-8 w-8" />
+                            </span>
+                            <span className="block text-sm text-slate-800 font-medium text-center leading-snug line-clamp-3 max-h-14">
+                              {card.content}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )
@@ -384,9 +483,14 @@ export default function CommunicationPage() {
                 <Card key={tool.id} className="border-2 border-slate-200">
                   <CardHeader>
                     <div
-                      className={`w-12 h-12 bg-${tool.color}-100 rounded-lg flex items-center justify-center mb-3`}
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center mb-3 ${getColorClasses(
+                        tool.color
+                      )}`}
                     >
-                      <span className="text-2xl">{tool.icon}</span>
+                      {(() => {
+                        const Icon = getIconComponent(tool.icon);
+                        return <Icon className="h-6 w-6" />;
+                      })()}
                     </div>
                     <CardTitle className="text-lg font-medium text-slate-800">
                       {tool.title}

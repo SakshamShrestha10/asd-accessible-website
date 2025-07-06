@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   Home,
   Settings,
@@ -28,52 +28,52 @@ import {
   LogOut,
   Shield,
   Loader2,
-} from "lucide-react"
-import { getCurrentUser } from "@/lib/auth"
-import { logoutAction } from "@/app/auth/logout/actions"
+} from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
+import { logoutAction } from "@/app/auth/logout/actions";
 
 interface AuthUser {
-  id: number
-  email: string
-  name: string
-  isAdmin: boolean
+  id: number;
+  email: string;
+  name: string;
+  isAdmin: boolean;
 }
 
 export default function Navigation() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [loggingOut, setLoggingOut] = useState(false)
-  const router = useRouter()
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const router = useRouter();
 
   const checkAuth = async () => {
     try {
-      setLoading(true)
-      const currentUser = await getCurrentUser()
-      setUser(currentUser)
+      setLoading(true);
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
     } catch (error) {
-      console.error("Auth check error:", error)
-      setUser(null)
+      console.error("Auth check error:", error);
+      setUser(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   // Listen for storage events to sync auth state across tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "auth_state_changed") {
-        checkAuth()
+        checkAuth();
       }
-    }
+    };
 
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
-  }, [])
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const navigationItems = [
     { href: "/", label: "Home", icon: Home },
@@ -81,8 +81,8 @@ export default function Navigation() {
     { href: "/communication", label: "Communication", icon: MessageCircle },
     { href: "/appointments", label: "Appointments", icon: Calendar },
     { href: "/community", label: "Community", icon: Users },
-    { href: "/learning", label: "Learning", icon: BookOpen },
-  ]
+    // { href: "/learning", label: "Learning", icon: BookOpen },
+  ];
 
   const getInitials = (name: string) => {
     return name
@@ -90,31 +90,31 @@ export default function Navigation() {
       .map((n) => n[0])
       .join("")
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   const handleLogout = async () => {
     try {
-      setLoggingOut(true)
-      await logoutAction()
-      setUser(null)
-      setIsMenuOpen(false)
+      setLoggingOut(true);
+      await logoutAction();
+      setUser(null);
+      setIsMenuOpen(false);
 
       // Trigger storage event to sync across tabs
-      localStorage.setItem("auth_state_changed", Date.now().toString())
+      localStorage.setItem("auth_state_changed", Date.now().toString());
 
       // Force page refresh to ensure clean state
-      window.location.href = "/"
+      window.location.href = "/";
     } catch (error) {
-      console.error("Logout error:", error)
-      setLoggingOut(false)
+      console.error("Logout error:", error);
+      setLoggingOut(false);
     }
-  }
+  };
 
   const handleAdminClick = () => {
-    setIsMenuOpen(false)
-    router.push("/admin")
-  }
+    setIsMenuOpen(false);
+    router.push("/admin");
+  };
 
   return (
     <nav className="bg-white border-b-2 border-slate-200 sticky top-0 z-50">
@@ -125,13 +125,15 @@ export default function Navigation() {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Heart className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-medium text-slate-800">Support Space</span>
+            <span className="text-xl font-medium text-slate-800">
+              Support Space
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {navigationItems.map((item) => {
-              const Icon = item.icon
+              const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
@@ -141,7 +143,7 @@ export default function Navigation() {
                   <Icon className="h-4 w-4" />
                   <span className="text-sm font-medium">{item.label}</span>
                 </Link>
-              )
+              );
             })}
 
             <div className="ml-4 flex items-center space-x-2">
@@ -159,7 +161,10 @@ export default function Navigation() {
                       size="sm"
                       className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     >
-                      <Link href="/admin" className="flex items-center space-x-1">
+                      <Link
+                        href="/admin"
+                        className="flex items-center space-x-1"
+                      >
                         <Shield className="h-4 w-4" />
                         <span>Admin</span>
                       </Link>
@@ -167,7 +172,10 @@ export default function Navigation() {
                   )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Button
+                        variant="ghost"
+                        className="relative h-8 w-8 rounded-full"
+                      >
                         <Avatar className="h-8 w-8">
                           <AvatarImage
                             src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.name}&backgroundColor=2563eb&textColor=ffffff`}
@@ -179,25 +187,41 @@ export default function Navigation() {
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuContent
+                      className="w-56"
+                      align="end"
+                      forceMount
+                    >
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{user.name}</p>
-                          <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                          <p className="text-sm font-medium leading-none">
+                            {user.name}
+                          </p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                          </p>
                           {user.isAdmin && (
-                            <p className="text-xs leading-none text-blue-600 font-medium">Administrator</p>
+                            <p className="text-xs leading-none text-blue-600 font-medium">
+                              Administrator
+                            </p>
                           )}
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href="/settings" className="flex items-center cursor-pointer">
+                        <Link
+                          href="/settings"
+                          className="flex items-center cursor-pointer"
+                        >
                           <User className="mr-2 h-4 w-4" />
                           <span>Profile</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/settings" className="flex items-center cursor-pointer">
+                        <Link
+                          href="/settings"
+                          className="flex items-center cursor-pointer"
+                        >
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Settings</span>
                         </Link>
@@ -206,7 +230,10 @@ export default function Navigation() {
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
-                            <Link href="/admin" className="flex items-center cursor-pointer text-blue-600">
+                            <Link
+                              href="/admin"
+                              className="flex items-center cursor-pointer text-blue-600"
+                            >
                               <Shield className="mr-2 h-4 w-4" />
                               <span>Admin Dashboard</span>
                             </Link>
@@ -232,12 +259,18 @@ export default function Navigation() {
               ) : (
                 <>
                   <Button asChild variant="ghost" size="sm">
-                    <Link href="/auth/login" className="flex items-center space-x-1">
+                    <Link
+                      href="/auth/login"
+                      className="flex items-center space-x-1"
+                    >
                       <span>Sign In</span>
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="sm">
-                    <Link href="/auth/register" className="flex items-center space-x-1">
+                    <Link
+                      href="/auth/register"
+                      className="flex items-center space-x-1"
+                    >
                       <span>Sign Up</span>
                     </Link>
                   </Button>
@@ -260,7 +293,11 @@ export default function Navigation() {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </Button>
         </div>
 
@@ -269,7 +306,7 @@ export default function Navigation() {
           <div className="md:hidden py-4 border-t border-slate-200">
             <div className="space-y-2">
               {navigationItems.map((item) => {
-                const Icon = item.icon
+                const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
@@ -280,7 +317,7 @@ export default function Navigation() {
                     <Icon className="h-5 w-5" />
                     <span className="font-medium">{item.label}</span>
                   </Link>
-                )
+                );
               })}
 
               <div className="pt-4 border-t border-slate-200 space-y-2">
@@ -305,7 +342,11 @@ export default function Navigation() {
                         <div>
                           <p className="text-sm font-medium">{user.name}</p>
                           <p className="text-xs text-slate-500">{user.email}</p>
-                          {user.isAdmin && <p className="text-xs text-blue-600 font-medium">Administrator</p>}
+                          {user.isAdmin && (
+                            <p className="text-xs text-blue-600 font-medium">
+                              Administrator
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -339,8 +380,14 @@ export default function Navigation() {
                       disabled={loggingOut}
                       className="flex items-center space-x-3 px-3 py-3 rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-colors duration-200 w-full text-left disabled:opacity-50"
                     >
-                      {loggingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
-                      <span className="font-medium">{loggingOut ? "Signing out..." : "Log out"}</span>
+                      {loggingOut ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <LogOut className="h-5 w-5" />
+                      )}
+                      <span className="font-medium">
+                        {loggingOut ? "Signing out..." : "Log out"}
+                      </span>
                     </button>
                   </>
                 ) : (
@@ -375,5 +422,5 @@ export default function Navigation() {
         )}
       </div>
     </nav>
-  )
+  );
 }
