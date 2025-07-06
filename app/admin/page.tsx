@@ -278,6 +278,30 @@ export default function AdminPage() {
   const [editingAssessment, setEditingAssessment] = useState(null);
   const [loadingAssessments, setLoadingAssessments] = useState(false);
   const [assessmentError, setAssessmentError] = useState("");
+  const [communicationTools, setCommunicationTools] = useState([]);
+  const [communicationToolForm, setCommunicationToolForm] = useState({
+    id: null,
+    title: "",
+    description: "",
+    type: "",
+    category: "",
+    content: "",
+    image_url: "",
+    audio_url: "",
+    tags: [] as string[],
+    difficulty: "",
+    icon: "",
+    color: "",
+    is_active: true,
+    sort_order: 0,
+  });
+  const [showCommunicationToolForm, setShowCommunicationToolForm] =
+    useState(false);
+  const [editingCommunicationTool, setEditingCommunicationTool] =
+    useState(null);
+  const [loadingCommunicationTools, setLoadingCommunicationTools] =
+    useState(false);
+  const [communicationToolError, setCommunicationToolError] = useState("");
 
   // Fetch data on component mount
   useEffect(() => {
@@ -1000,6 +1024,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === "coping") fetchCopingStrategies();
     if (activeTab === "assessments") fetchAssessments();
+    if (activeTab === "communication") fetchCommunicationTools();
     // eslint-disable-next-line
   }, [activeTab]);
 
@@ -1166,6 +1191,100 @@ export default function AdminPage() {
       toast.success("Assessment deleted");
     } catch (e: any) {
       toast.error(e.message || "Error deleting assessment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Fetch communication tools
+  const fetchCommunicationTools = async () => {
+    setLoadingCommunicationTools(true);
+    setCommunicationToolError("");
+    try {
+      const res = await fetch("/api/admin/communication-tools");
+      if (!res.ok) throw new Error("Failed to fetch communication tools");
+      const data = await res.json();
+      setCommunicationTools(data.communicationTools || []);
+    } catch (e: any) {
+      setCommunicationToolError(
+        e.message || "Error loading communication tools"
+      );
+    } finally {
+      setLoadingCommunicationTools(false);
+    }
+  };
+
+  // Handle form changes
+  const handleCommunicationToolFormChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setCommunicationToolForm((prev: any) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Handle create or update
+  const handleCommunicationToolSubmit = async (e: any) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setCommunicationToolError("");
+    try {
+      const method = editingCommunicationTool ? "PUT" : "POST";
+      const res = await fetch("/api/admin/communication-tools", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(communicationToolForm),
+      });
+      if (!res.ok) throw new Error("Failed to save communication tool");
+      setShowCommunicationToolForm(false);
+      setEditingCommunicationTool(null);
+      setCommunicationToolForm({
+        id: null,
+        title: "",
+        description: "",
+        type: "",
+        category: "",
+        content: "",
+        image_url: "",
+        audio_url: "",
+        tags: [],
+        difficulty: "",
+        icon: "",
+        color: "",
+        is_active: true,
+        sort_order: 0,
+      });
+      fetchCommunicationTools();
+      toast.success("Communication tool saved");
+    } catch (e: any) {
+      setCommunicationToolError(e.message || "Error saving communication tool");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit
+  const handleEditCommunicationTool = (tool: any) => {
+    setEditingCommunicationTool(tool);
+    setCommunicationToolForm({ ...tool });
+    setShowCommunicationToolForm(true);
+  };
+
+  // Handle delete
+  const handleDeleteCommunicationTool = async (id: number) => {
+    if (!confirm("Delete this communication tool?")) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/communication-tools", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete communication tool");
+      fetchCommunicationTools();
+      toast.success("Communication tool deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Error deleting communication tool");
     } finally {
       setSubmitting(false);
     }
@@ -3306,14 +3425,336 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="communication">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Communication Cards & Phrases</CardTitle>
+                <Button
+                  onClick={() => {
+                    setShowCommunicationToolForm(true);
+                    setEditingCommunicationTool(null);
+                    setCommunicationToolForm({
+                      id: null,
+                      title: "",
+                      description: "",
+                      type: "",
+                      category: "",
+                      content: "",
+                      image_url: "",
+                      audio_url: "",
+                      tags: [],
+                      difficulty: "",
+                      icon: "",
+                      color: "",
+                      is_active: true,
+                      sort_order: 0,
+                    });
+                  }}
+                >
+                  + Add Communication Tool
+                </Button>
               </CardHeader>
               <CardContent>
-                <p>
-                  Manage communication cards and phrases here. (CRUD UI coming
-                  soon)
-                </p>
+                {communicationToolError && (
+                  <div className="text-red-600 mb-2">
+                    {communicationToolError}
+                  </div>
+                )}
+                {loadingCommunicationTools ? (
+                  <div className="py-8 text-center text-slate-500">
+                    Loading...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border text-sm">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="p-2 border">Title</th>
+                          <th className="p-2 border">Type</th>
+                          <th className="p-2 border">Category</th>
+                          <th className="p-2 border">Difficulty</th>
+                          <th className="p-2 border">Icon</th>
+                          <th className="p-2 border">Active</th>
+                          <th className="p-2 border">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {communicationTools.map((tool: any) => (
+                          <tr key={tool.id} className="border-b">
+                            <td className="p-2 border font-medium">
+                              {tool.title}
+                            </td>
+                            <td className="p-2 border">
+                              <Badge
+                                variant={
+                                  tool.type === "card"
+                                    ? "default"
+                                    : tool.type === "phrase"
+                                    ? "secondary"
+                                    : tool.type === "visual"
+                                    ? "outline"
+                                    : "destructive"
+                                }
+                              >
+                                {tool.type}
+                              </Badge>
+                            </td>
+                            <td className="p-2 border">
+                              <Badge variant="outline">{tool.category}</Badge>
+                            </td>
+                            <td className="p-2 border">{tool.difficulty}</td>
+                            <td className="p-2 border">{tool.icon}</td>
+                            <td className="p-2 border text-center">
+                              {tool.is_active ? "Yes" : "No"}
+                            </td>
+                            <td className="p-2 border text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  handleEditCommunicationTool(tool)
+                                }
+                                className="mr-2"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handleDeleteCommunicationTool(tool.id)
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Form for add/edit */}
+                {showCommunicationToolForm && (
+                  <form
+                    onSubmit={handleCommunicationToolSubmit}
+                    className="mt-8 space-y-4 bg-slate-50 p-6 rounded-lg border"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Title</Label>
+                        <Input
+                          name="title"
+                          value={communicationToolForm.title}
+                          onChange={handleCommunicationToolFormChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label>Type</Label>
+                        <Select
+                          name="type"
+                          value={communicationToolForm.type}
+                          onValueChange={(value) =>
+                            setCommunicationToolForm((prev) => ({
+                              ...prev,
+                              type: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="card">
+                              Communication Card
+                            </SelectItem>
+                            <SelectItem value="phrase">
+                              Phrase Collection
+                            </SelectItem>
+                            <SelectItem value="visual">Visual Aid</SelectItem>
+                            <SelectItem value="audio">Audio Tool</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Category</Label>
+                        <Select
+                          name="category"
+                          value={communicationToolForm.category}
+                          onValueChange={(value) =>
+                            setCommunicationToolForm((prev) => ({
+                              ...prev,
+                              category: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="basic_needs">
+                              Basic Needs
+                            </SelectItem>
+                            <SelectItem value="social">
+                              Social Interaction
+                            </SelectItem>
+                            <SelectItem value="emotions">Emotions</SelectItem>
+                            <SelectItem value="emergency">Emergency</SelectItem>
+                            <SelectItem value="daily">
+                              Daily Activities
+                            </SelectItem>
+                            <SelectItem value="organization">
+                              Organization
+                            </SelectItem>
+                            <SelectItem value="decision_making">
+                              Decision Making
+                            </SelectItem>
+                            <SelectItem value="technology">
+                              Technology
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Difficulty</Label>
+                        <Select
+                          name="difficulty"
+                          value={communicationToolForm.difficulty}
+                          onValueChange={(value) =>
+                            setCommunicationToolForm((prev) => ({
+                              ...prev,
+                              difficulty: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select difficulty" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Easy">Easy</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Hard">Hard</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Icon</Label>
+                        <Input
+                          name="icon"
+                          value={communicationToolForm.icon}
+                          onChange={handleCommunicationToolFormChange}
+                          placeholder="e.g., MessageSquare, Heart, Calendar"
+                        />
+                      </div>
+                      <div>
+                        <Label>Color</Label>
+                        <Input
+                          name="color"
+                          value={communicationToolForm.color}
+                          onChange={handleCommunicationToolFormChange}
+                          placeholder="e.g., blue, green, purple"
+                        />
+                      </div>
+                      <div>
+                        <Label>Sort Order</Label>
+                        <Input
+                          name="sort_order"
+                          type="number"
+                          value={communicationToolForm.sort_order}
+                          onChange={handleCommunicationToolFormChange}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-6">
+                        <input
+                          type="checkbox"
+                          name="is_active"
+                          checked={communicationToolForm.is_active}
+                          onChange={handleCommunicationToolFormChange}
+                          id="communication_is_active"
+                        />
+                        <Label htmlFor="communication_is_active">Active</Label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        name="description"
+                        value={communicationToolForm.description}
+                        onChange={handleCommunicationToolFormChange}
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label>Content</Label>
+                      <Textarea
+                        name="content"
+                        value={communicationToolForm.content}
+                        onChange={handleCommunicationToolFormChange}
+                        rows={4}
+                        placeholder="For cards: the text to display. For phrases: list of phrases separated by commas. For visual aids: description of the visual tool."
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Image URL</Label>
+                        <Input
+                          name="image_url"
+                          value={communicationToolForm.image_url}
+                          onChange={handleCommunicationToolFormChange}
+                          placeholder="URL for visual content"
+                        />
+                      </div>
+                      <div>
+                        <Label>Audio URL</Label>
+                        <Input
+                          name="audio_url"
+                          value={communicationToolForm.audio_url}
+                          onChange={handleCommunicationToolFormChange}
+                          placeholder="URL for audio content"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Tags (comma-separated)</Label>
+                      <Input
+                        name="tags"
+                        value={communicationToolForm.tags?.join(", ") || ""}
+                        onChange={(e) =>
+                          setCommunicationToolForm((prev) => ({
+                            ...prev,
+                            tags: e.target.value
+                              .split(",")
+                              .map((tag) => tag.trim())
+                              .filter((tag) => tag),
+                          }))
+                        }
+                        placeholder="e.g., help, emergency, daily"
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {submitting
+                          ? "Saving..."
+                          : editingCommunicationTool
+                          ? "Update"
+                          : "Create"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowCommunicationToolForm(false);
+                          setEditingCommunicationTool(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
