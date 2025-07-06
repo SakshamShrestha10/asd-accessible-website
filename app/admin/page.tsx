@@ -219,6 +219,46 @@ export default function AdminPage() {
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [activityError, setActivityError] = useState("");
 
+  // Add state for services form and editing
+  const [serviceForm, setServiceForm] = useState({
+    id: null,
+    name: "",
+    description: "",
+    contact: "",
+    website: "",
+    type: "",
+    eligibility: "",
+    is_active: true,
+    sort_order: 0,
+  });
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [serviceError, setServiceError] = useState("");
+
+  // Add state for coping strategies form and editing
+  const [copingStrategyForm, setCopingStrategyForm] = useState({
+    id: null,
+    title: "",
+    description: "",
+    duration: "",
+    difficulty: "",
+    icon: "",
+    color: "",
+    category: "",
+    steps: [],
+    benefits: [],
+    audio_url: "",
+    audio_duration: "",
+    audio_type: "",
+    is_active: true,
+    sort_order: 0,
+  });
+  const [showCopingStrategyForm, setShowCopingStrategyForm] = useState(false);
+  const [editingCopingStrategy, setEditingCopingStrategy] = useState(null);
+  const [loadingCopingStrategies, setLoadingCopingStrategies] = useState(false);
+  const [copingStrategyError, setCopingStrategyError] = useState("");
+
   // Fetch data on component mount
   useEffect(() => {
     fetchData();
@@ -824,6 +864,198 @@ export default function AdminPage() {
     } catch (error: any) {
       console.error("Error deleting doctor:", error);
       toast.error(error.message || "Failed to delete doctor");
+    }
+  };
+
+  // Fetch services
+  const fetchServices = async () => {
+    setLoadingServices(true);
+    setServiceError("");
+    try {
+      const res = await fetch("/api/admin/services");
+      if (!res.ok) throw new Error("Failed to fetch services");
+      const data = await res.json();
+      setServices(data.services || []);
+    } catch (e: any) {
+      setServiceError(e.message || "Error loading services");
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  // Fetch on tab open
+  useEffect(() => {
+    if (activeTab === "services") fetchServices();
+    // eslint-disable-next-line
+  }, [activeTab]);
+
+  // Handle form changes
+  const handleServiceFormChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setServiceForm((prev: any) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Handle create or update
+  const handleServiceSubmit = async (e: any) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setServiceError("");
+    try {
+      const method = editingService ? "PUT" : "POST";
+      const res = await fetch("/api/admin/services", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(serviceForm),
+      });
+      if (!res.ok) throw new Error("Failed to save service");
+      setShowServiceForm(false);
+      setEditingService(null);
+      setServiceForm({
+        id: null,
+        name: "",
+        description: "",
+        contact: "",
+        website: "",
+        type: "",
+        eligibility: "",
+        is_active: true,
+        sort_order: 0,
+      });
+      fetchServices();
+      toast.success("Service saved");
+    } catch (e: any) {
+      setServiceError(e.message || "Error saving service");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit
+  const handleEditService = (service: any) => {
+    setEditingService(service);
+    setServiceForm({ ...service });
+    setShowServiceForm(true);
+  };
+
+  // Handle delete
+  const handleDeleteService = async (id: number) => {
+    if (!confirm("Delete this service?")) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/services", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete service");
+      fetchServices();
+      toast.success("Service deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Error deleting service");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Fetch coping strategies
+  const fetchCopingStrategies = async () => {
+    setLoadingCopingStrategies(true);
+    setCopingStrategyError("");
+    try {
+      const res = await fetch("/api/admin/coping-strategies");
+      if (!res.ok) throw new Error("Failed to fetch coping strategies");
+      const data = await res.json();
+      setCopingStrategies(data.copingStrategies || []);
+    } catch (e: any) {
+      setCopingStrategyError(e.message || "Error loading coping strategies");
+    } finally {
+      setLoadingCopingStrategies(false);
+    }
+  };
+
+  // Fetch on tab open
+  useEffect(() => {
+    if (activeTab === "coping") fetchCopingStrategies();
+    // eslint-disable-next-line
+  }, [activeTab]);
+
+  // Handle form changes
+  const handleCopingStrategyFormChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setCopingStrategyForm((prev: any) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Handle create or update
+  const handleCopingStrategySubmit = async (e: any) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setCopingStrategyError("");
+    try {
+      const method = editingCopingStrategy ? "PUT" : "POST";
+      const res = await fetch("/api/admin/coping-strategies", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(copingStrategyForm),
+      });
+      if (!res.ok) throw new Error("Failed to save coping strategy");
+      setShowCopingStrategyForm(false);
+      setEditingCopingStrategy(null);
+      setCopingStrategyForm({
+        id: null,
+        title: "",
+        description: "",
+        duration: "",
+        difficulty: "",
+        icon: "",
+        color: "",
+        category: "",
+        steps: [],
+        benefits: [],
+        audio_url: "",
+        audio_duration: "",
+        audio_type: "",
+        is_active: true,
+        sort_order: 0,
+      });
+      fetchCopingStrategies();
+      toast.success("Coping strategy saved");
+    } catch (e: any) {
+      setCopingStrategyError(e.message || "Error saving coping strategy");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit
+  const handleEditCopingStrategy = (strategy: any) => {
+    setEditingCopingStrategy(strategy);
+    setCopingStrategyForm({ ...strategy });
+    setShowCopingStrategyForm(true);
+  };
+
+  // Handle delete
+  const handleDeleteCopingStrategy = async (id: number) => {
+    if (!confirm("Delete this coping strategy?")) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/coping-strategies", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete coping strategy");
+      fetchCopingStrategies();
+      toast.success("Coping strategy deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Error deleting coping strategy");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -2182,21 +2414,478 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="services">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Community Services</CardTitle>
+                <Button
+                  onClick={() => {
+                    setShowServiceForm(true);
+                    setEditingService(null);
+                    setServiceForm({
+                      id: null,
+                      name: "",
+                      description: "",
+                      contact: "",
+                      website: "",
+                      type: "",
+                      eligibility: "",
+                      is_active: true,
+                      sort_order: 0,
+                    });
+                  }}
+                >
+                  + Add Service
+                </Button>
               </CardHeader>
               <CardContent>
-                <p>Manage services here. (CRUD UI coming soon)</p>
+                {serviceError && (
+                  <div className="text-red-600 mb-2">{serviceError}</div>
+                )}
+                {loadingServices ? (
+                  <div className="py-8 text-center text-slate-500">
+                    Loading...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border text-sm">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="p-2 border">Name</th>
+                          <th className="p-2 border">Type</th>
+                          <th className="p-2 border">Contact</th>
+                          <th className="p-2 border">Website</th>
+                          <th className="p-2 border">Eligibility</th>
+                          <th className="p-2 border">Active</th>
+                          <th className="p-2 border">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {services.map((service: any) => (
+                          <tr key={service.id} className="border-b">
+                            <td className="p-2 border font-medium">
+                              {service.name}
+                            </td>
+                            <td className="p-2 border">{service.type}</td>
+                            <td className="p-2 border">{service.contact}</td>
+                            <td className="p-2 border">{service.website}</td>
+                            <td className="p-2 border">
+                              {service.eligibility}
+                            </td>
+                            <td className="p-2 border text-center">
+                              {service.is_active ? "Yes" : "No"}
+                            </td>
+                            <td className="p-2 border text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditService(service)}
+                                className="mr-2"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteService(service.id)}
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Form for add/edit */}
+                {showServiceForm && (
+                  <form
+                    onSubmit={handleServiceSubmit}
+                    className="mt-8 space-y-4 bg-slate-50 p-6 rounded-lg border"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          name="name"
+                          value={serviceForm.name}
+                          onChange={handleServiceFormChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label>Type</Label>
+                        <Input
+                          name="type"
+                          value={serviceForm.type}
+                          onChange={handleServiceFormChange}
+                          placeholder="e.g., Employment, Transportation, Healthcare"
+                        />
+                      </div>
+                      <div>
+                        <Label>Contact</Label>
+                        <Input
+                          name="contact"
+                          value={serviceForm.contact}
+                          onChange={handleServiceFormChange}
+                          placeholder="e.g., (555) 123-4567"
+                        />
+                      </div>
+                      <div>
+                        <Label>Website</Label>
+                        <Input
+                          name="website"
+                          value={serviceForm.website}
+                          onChange={handleServiceFormChange}
+                          placeholder="e.g., www.example.org"
+                        />
+                      </div>
+                      <div>
+                        <Label>Eligibility</Label>
+                        <Input
+                          name="eligibility"
+                          value={serviceForm.eligibility}
+                          onChange={handleServiceFormChange}
+                          placeholder="e.g., Adults with disabilities, All ages"
+                        />
+                      </div>
+                      <div>
+                        <Label>Sort Order</Label>
+                        <Input
+                          name="sort_order"
+                          type="number"
+                          value={serviceForm.sort_order}
+                          onChange={handleServiceFormChange}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-6">
+                        <input
+                          type="checkbox"
+                          name="is_active"
+                          checked={serviceForm.is_active}
+                          onChange={handleServiceFormChange}
+                          id="service_is_active"
+                        />
+                        <Label htmlFor="service_is_active">Active</Label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        name="description"
+                        value={serviceForm.description}
+                        onChange={handleServiceFormChange}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {submitting
+                          ? "Saving..."
+                          : editingService
+                          ? "Update"
+                          : "Create"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowServiceForm(false);
+                          setEditingService(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
           <TabsContent value="coping">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Coping Strategies</CardTitle>
+                <Button
+                  onClick={() => {
+                    setShowCopingStrategyForm(true);
+                    setEditingCopingStrategy(null);
+                    setCopingStrategyForm({
+                      id: null,
+                      title: "",
+                      description: "",
+                      duration: "",
+                      difficulty: "",
+                      icon: "",
+                      color: "",
+                      category: "",
+                      steps: [],
+                      benefits: [],
+                      audio_url: "",
+                      audio_duration: "",
+                      audio_type: "",
+                      is_active: true,
+                      sort_order: 0,
+                    });
+                  }}
+                >
+                  + Add Coping Strategy
+                </Button>
               </CardHeader>
               <CardContent>
-                <p>Manage coping strategies here. (CRUD UI coming soon)</p>
+                {copingStrategyError && (
+                  <div className="text-red-600 mb-2">{copingStrategyError}</div>
+                )}
+                {loadingCopingStrategies ? (
+                  <div className="py-8 text-center text-slate-500">
+                    Loading...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border text-sm">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="p-2 border">Title</th>
+                          <th className="p-2 border">Category</th>
+                          <th className="p-2 border">Duration</th>
+                          <th className="p-2 border">Difficulty</th>
+                          <th className="p-2 border">Icon</th>
+                          <th className="p-2 border">Active</th>
+                          <th className="p-2 border">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {copingStrategies.map((strategy: any) => (
+                          <tr key={strategy.id} className="border-b">
+                            <td className="p-2 border font-medium">
+                              {strategy.title}
+                            </td>
+                            <td className="p-2 border">
+                              <Badge
+                                variant={
+                                  strategy.category === "immediate"
+                                    ? "default"
+                                    : strategy.category === "daily"
+                                    ? "secondary"
+                                    : "outline"
+                                }
+                              >
+                                {strategy.category}
+                              </Badge>
+                            </td>
+                            <td className="p-2 border">{strategy.duration}</td>
+                            <td className="p-2 border">
+                              {strategy.difficulty}
+                            </td>
+                            <td className="p-2 border">{strategy.icon}</td>
+                            <td className="p-2 border text-center">
+                              {strategy.is_active ? "Yes" : "No"}
+                            </td>
+                            <td className="p-2 border text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  handleEditCopingStrategy(strategy)
+                                }
+                                className="mr-2"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handleDeleteCopingStrategy(strategy.id)
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Form for add/edit */}
+                {showCopingStrategyForm && (
+                  <form
+                    onSubmit={handleCopingStrategySubmit}
+                    className="mt-8 space-y-4 bg-slate-50 p-6 rounded-lg border"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Title</Label>
+                        <Input
+                          name="title"
+                          value={copingStrategyForm.title}
+                          onChange={handleCopingStrategyFormChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label>Category</Label>
+                        <Select
+                          name="category"
+                          value={copingStrategyForm.category}
+                          onValueChange={(value) =>
+                            setCopingStrategyForm((prev) => ({
+                              ...prev,
+                              category: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="immediate">
+                              Immediate Relief
+                            </SelectItem>
+                            <SelectItem value="daily">Daily Tools</SelectItem>
+                            <SelectItem value="audio">Audio Support</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Duration</Label>
+                        <Input
+                          name="duration"
+                          value={copingStrategyForm.duration}
+                          onChange={handleCopingStrategyFormChange}
+                          placeholder="e.g., 5-10 minutes"
+                        />
+                      </div>
+                      <div>
+                        <Label>Difficulty</Label>
+                        <Select
+                          name="difficulty"
+                          value={copingStrategyForm.difficulty}
+                          onValueChange={(value) =>
+                            setCopingStrategyForm((prev) => ({
+                              ...prev,
+                              difficulty: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select difficulty" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Easy">Easy</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Hard">Hard</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Icon</Label>
+                        <Input
+                          name="icon"
+                          value={copingStrategyForm.icon}
+                          onChange={handleCopingStrategyFormChange}
+                          placeholder="e.g., Waves, Brain, Heart"
+                        />
+                      </div>
+                      <div>
+                        <Label>Color</Label>
+                        <Input
+                          name="color"
+                          value={copingStrategyForm.color}
+                          onChange={handleCopingStrategyFormChange}
+                          placeholder="e.g., blue, green, purple"
+                        />
+                      </div>
+                      <div>
+                        <Label>Sort Order</Label>
+                        <Input
+                          name="sort_order"
+                          type="number"
+                          value={copingStrategyForm.sort_order}
+                          onChange={handleCopingStrategyFormChange}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-6">
+                        <input
+                          type="checkbox"
+                          name="is_active"
+                          checked={copingStrategyForm.is_active}
+                          onChange={handleCopingStrategyFormChange}
+                          id="coping_is_active"
+                        />
+                        <Label htmlFor="coping_is_active">Active</Label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        name="description"
+                        value={copingStrategyForm.description}
+                        onChange={handleCopingStrategyFormChange}
+                        rows={3}
+                      />
+                    </div>
+                    {/* Audio fields for audio category */}
+                    {copingStrategyForm.category === "audio" && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label>Audio URL</Label>
+                          <Input
+                            name="audio_url"
+                            value={copingStrategyForm.audio_url}
+                            onChange={handleCopingStrategyFormChange}
+                            placeholder="Audio file URL"
+                          />
+                        </div>
+                        <div>
+                          <Label>Audio Duration</Label>
+                          <Input
+                            name="audio_duration"
+                            value={copingStrategyForm.audio_duration}
+                            onChange={handleCopingStrategyFormChange}
+                            placeholder="e.g., 30 minutes"
+                          />
+                        </div>
+                        <div>
+                          <Label>Audio Type</Label>
+                          <Input
+                            name="audio_type"
+                            value={copingStrategyForm.audio_type}
+                            onChange={handleCopingStrategyFormChange}
+                            placeholder="e.g., Nature, Focus, Meditation"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {submitting
+                          ? "Saving..."
+                          : editingCopingStrategy
+                          ? "Update"
+                          : "Create"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowCopingStrategyForm(false);
+                          setEditingCopingStrategy(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
