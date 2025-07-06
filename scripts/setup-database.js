@@ -58,6 +58,25 @@ async function setupDatabase() {
     await sql.unsafe(seedData);
     console.log("✅ Seed data applied successfully");
 
+    console.log("🌱 Reading static content schema...");
+    const staticSchemaPath = path.join(
+      __dirname,
+      "003-static-content-schema.sql"
+    );
+    const staticSchema = fs.readFileSync(staticSchemaPath, "utf8");
+
+    console.log("🌱 Applying static content schema...");
+    await sql.unsafe(staticSchema);
+    console.log("✅ Static content schema applied successfully");
+
+    console.log("🌱 Reading static content seed data...");
+    const staticSeedPath = path.join(__dirname, "004-static-content-seed.sql");
+    const staticSeedData = fs.readFileSync(staticSeedPath, "utf8");
+
+    console.log("🌱 Applying static content seed data...");
+    await sql.unsafe(staticSeedData);
+    console.log("✅ Static content seed data applied successfully");
+
     console.log("🎉 Database setup completed successfully!");
     console.log("");
     console.log("You can now:");

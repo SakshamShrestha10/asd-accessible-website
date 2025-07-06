@@ -136,6 +136,17 @@ export default function AdminPage() {
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [activeTab, setActiveTab] = useState("content");
 
+  // Add new state for static content management
+  const [supportGroups, setSupportGroups] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [services, setServices] = useState([]);
+  const [copingStrategies, setCopingStrategies] = useState([]);
+  const [faqs, setFaqs] = useState([]);
+  const [assessmentTypes, setAssessmentTypes] = useState([]);
+  const [assessmentQuestions, setAssessmentQuestions] = useState([]);
+  const [communicationCards, setCommunicationCards] = useState([]);
+  const [communicationPhrases, setCommunicationPhrases] = useState([]);
+
   const [contentForm, setContentForm] = useState<ContentFormData>({
     title: "",
     description: "",
@@ -167,10 +178,244 @@ export default function AdminPage() {
     is_accepting_patients: true,
   });
 
+  // Add state for support group form and editing
+  const [supportGroupForm, setSupportGroupForm] = useState({
+    id: null,
+    name: "",
+    description: "",
+    location: "",
+    address: "",
+    schedule: "",
+    contact: "",
+    website: "",
+    type: "",
+    capacity: "",
+    facilitator: "",
+    cost: "",
+    is_active: true,
+    sort_order: 0,
+  });
+  const [showSupportGroupForm, setShowSupportGroupForm] = useState(false);
+  const [editingSupportGroup, setEditingSupportGroup] = useState(null);
+  const [loadingSupportGroups, setLoadingSupportGroups] = useState(false);
+  const [supportGroupError, setSupportGroupError] = useState("");
+
+  // Add state for activities form and editing
+  const [activityForm, setActivityForm] = useState({
+    id: null,
+    name: "",
+    description: "",
+    location: "",
+    schedule: "",
+    icon: "",
+    color: "",
+    cost: "",
+    age_group: "",
+    is_active: true,
+    sort_order: 0,
+  });
+  const [showActivityForm, setShowActivityForm] = useState(false);
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [activityError, setActivityError] = useState("");
+
   // Fetch data on component mount
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Fetch support groups
+  const fetchSupportGroups = async () => {
+    setLoadingSupportGroups(true);
+    setSupportGroupError("");
+    try {
+      const res = await fetch("/api/admin/support-groups");
+      if (!res.ok) throw new Error("Failed to fetch support groups");
+      const data = await res.json();
+      setSupportGroups(data.supportGroups || []);
+    } catch (e: any) {
+      setSupportGroupError(e.message || "Error loading support groups");
+    } finally {
+      setLoadingSupportGroups(false);
+    }
+  };
+
+  // Fetch on tab open
+  useEffect(() => {
+    if (activeTab === "support-groups") fetchSupportGroups();
+    // eslint-disable-next-line
+  }, [activeTab]);
+
+  // Handle form changes
+  const handleSupportGroupFormChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setSupportGroupForm((prev: any) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Handle create or update
+  const handleSupportGroupSubmit = async (e: any) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setSupportGroupError("");
+    try {
+      const method = editingSupportGroup ? "PUT" : "POST";
+      const res = await fetch("/api/admin/support-groups", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(supportGroupForm),
+      });
+      if (!res.ok) throw new Error("Failed to save support group");
+      setShowSupportGroupForm(false);
+      setEditingSupportGroup(null);
+      setSupportGroupForm({
+        id: null,
+        name: "",
+        description: "",
+        location: "",
+        address: "",
+        schedule: "",
+        contact: "",
+        website: "",
+        type: "",
+        capacity: "",
+        facilitator: "",
+        cost: "",
+        is_active: true,
+        sort_order: 0,
+      });
+      fetchSupportGroups();
+      toast.success("Support group saved");
+    } catch (e: any) {
+      setSupportGroupError(e.message || "Error saving support group");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit
+  const handleEditSupportGroup = (group: any) => {
+    setEditingSupportGroup(group);
+    setSupportGroupForm({ ...group });
+    setShowSupportGroupForm(true);
+  };
+
+  // Handle delete
+  const handleDeleteSupportGroup = async (id: number) => {
+    if (!confirm("Delete this support group?")) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/support-groups", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete support group");
+      fetchSupportGroups();
+      toast.success("Support group deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Error deleting support group");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Fetch activities
+  const fetchActivities = async () => {
+    setLoadingActivities(true);
+    setActivityError("");
+    try {
+      const res = await fetch("/api/admin/activities");
+      if (!res.ok) throw new Error("Failed to fetch activities");
+      const data = await res.json();
+      setActivities(data.activities || []);
+    } catch (e: any) {
+      setActivityError(e.message || "Error loading activities");
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
+  // Fetch on tab open
+  useEffect(() => {
+    if (activeTab === "activities") fetchActivities();
+    // eslint-disable-next-line
+  }, [activeTab]);
+
+  // Handle form changes
+  const handleActivityFormChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setActivityForm((prev: any) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Handle create or update
+  const handleActivitySubmit = async (e: any) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setActivityError("");
+    try {
+      const method = editingActivity ? "PUT" : "POST";
+      const res = await fetch("/api/admin/activities", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(activityForm),
+      });
+      if (!res.ok) throw new Error("Failed to save activity");
+      setShowActivityForm(false);
+      setEditingActivity(null);
+      setActivityForm({
+        id: null,
+        name: "",
+        description: "",
+        location: "",
+        schedule: "",
+        icon: "",
+        color: "",
+        cost: "",
+        age_group: "",
+        is_active: true,
+        sort_order: 0,
+      });
+      fetchActivities();
+      toast.success("Activity saved");
+    } catch (e: any) {
+      setActivityError(e.message || "Error saving activity");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit
+  const handleEditActivity = (activity: any) => {
+    setEditingActivity(activity);
+    setActivityForm({ ...activity });
+    setShowActivityForm(true);
+  };
+
+  // Handle delete
+  const handleDeleteActivity = async (id: number) => {
+    if (!confirm("Delete this activity?")) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/activities", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete activity");
+      fetchActivities();
+      toast.success("Activity deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Error deleting activity");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -625,111 +870,25 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-7xl mx-auto py-8 px-4">
-        {/* Dashboard Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-2 border-slate-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  Total Users
-                </CardTitle>
-                <Users className="h-4 w-4 text-blue-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-800">
-                {users.length}
-              </div>
-              <p className="text-xs text-slate-600 mt-1">Registered users</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-slate-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  Content Items
-                </CardTitle>
-                <FileText className="h-4 w-4 text-green-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-800">
-                {learningPaths.length}
-              </div>
-              <p className="text-xs text-slate-600 mt-1">Learning paths</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-slate-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  Published Content
-                </CardTitle>
-                <Eye className="h-4 w-4 text-purple-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-800">
-                {learningPaths.filter((path) => path.is_published).length}
-              </div>
-              <p className="text-xs text-slate-600 mt-1">Publicly available</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-slate-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  Healthcare Providers
-                </CardTitle>
-                <Users className="h-4 w-4 text-orange-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-800">
-                {doctors.length}
-              </div>
-              <p className="text-xs text-slate-600 mt-1">
-                Doctors & specialists
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-6"
-        >
-          <TabsList className="grid w-full grid-cols-4 bg-white border-2 border-slate-200">
-            <TabsTrigger
-              value="content"
-              className="data-[state=active]:bg-blue-100"
-            >
-              Content Management
-            </TabsTrigger>
-            <TabsTrigger
-              value="categories"
-              className="data-[state=active]:bg-purple-100"
-            >
-              Categories
-            </TabsTrigger>
-            <TabsTrigger
-              value="doctors"
-              className="data-[state=active]:bg-orange-100"
-            >
-              Doctors
-            </TabsTrigger>
-            <TabsTrigger
-              value="users"
-              className="data-[state=active]:bg-green-100"
-            >
-              User Management
-            </TabsTrigger>
+        <h1 className="text-3xl font-medium text-slate-800 mb-6">
+          Admin Panel
+        </h1>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-8 grid grid-cols-5 md:grid-cols-10 gap-2">
+            <TabsTrigger value="content">Learning Content</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="doctors">Doctors</TabsTrigger>
+            {/* New static content tabs */}
+            <TabsTrigger value="support-groups">Support Groups</TabsTrigger>
+            <TabsTrigger value="activities">Activities</TabsTrigger>
+            <TabsTrigger value="services">Services</TabsTrigger>
+            <TabsTrigger value="coping">Coping Strategies</TabsTrigger>
+            <TabsTrigger value="faqs">Help FAQs</TabsTrigger>
+            <TabsTrigger value="assessments">Assessments</TabsTrigger>
+            <TabsTrigger value="communication">Communication Tools</TabsTrigger>
           </TabsList>
-
+          {/* Existing tabs... */}
           <TabsContent value="content" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-medium text-slate-800">
@@ -1581,6 +1740,499 @@ export default function AdminPage() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* New static content tabs */}
+          <TabsContent value="support-groups">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Community Support Groups</CardTitle>
+                <Button
+                  onClick={() => {
+                    setShowSupportGroupForm(true);
+                    setEditingSupportGroup(null);
+                    setSupportGroupForm({
+                      id: null,
+                      name: "",
+                      description: "",
+                      location: "",
+                      address: "",
+                      schedule: "",
+                      contact: "",
+                      website: "",
+                      type: "",
+                      capacity: "",
+                      facilitator: "",
+                      cost: "",
+                      is_active: true,
+                      sort_order: 0,
+                    });
+                  }}
+                >
+                  + Add Support Group
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {supportGroupError && (
+                  <div className="text-red-600 mb-2">{supportGroupError}</div>
+                )}
+                {loadingSupportGroups ? (
+                  <div className="py-8 text-center text-slate-500">
+                    Loading...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border text-sm">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="p-2 border">Name</th>
+                          <th className="p-2 border">Location</th>
+                          <th className="p-2 border">Schedule</th>
+                          <th className="p-2 border">Contact</th>
+                          <th className="p-2 border">Active</th>
+                          <th className="p-2 border">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {supportGroups.map((group: any) => (
+                          <tr key={group.id} className="border-b">
+                            <td className="p-2 border font-medium">
+                              {group.name}
+                            </td>
+                            <td className="p-2 border">{group.location}</td>
+                            <td className="p-2 border">{group.schedule}</td>
+                            <td className="p-2 border">{group.contact}</td>
+                            <td className="p-2 border text-center">
+                              {group.is_active ? "Yes" : "No"}
+                            </td>
+                            <td className="p-2 border text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditSupportGroup(group)}
+                                className="mr-2"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handleDeleteSupportGroup(group.id)
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Form for add/edit */}
+                {showSupportGroupForm && (
+                  <form
+                    onSubmit={handleSupportGroupSubmit}
+                    className="mt-8 space-y-4 bg-slate-50 p-6 rounded-lg border"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          name="name"
+                          value={supportGroupForm.name}
+                          onChange={handleSupportGroupFormChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label>Location</Label>
+                        <Input
+                          name="location"
+                          value={supportGroupForm.location}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Schedule</Label>
+                        <Input
+                          name="schedule"
+                          value={supportGroupForm.schedule}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Contact</Label>
+                        <Input
+                          name="contact"
+                          value={supportGroupForm.contact}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Website</Label>
+                        <Input
+                          name="website"
+                          value={supportGroupForm.website}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Type</Label>
+                        <Input
+                          name="type"
+                          value={supportGroupForm.type}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Capacity</Label>
+                        <Input
+                          name="capacity"
+                          value={supportGroupForm.capacity}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Facilitator</Label>
+                        <Input
+                          name="facilitator"
+                          value={supportGroupForm.facilitator}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Cost</Label>
+                        <Input
+                          name="cost"
+                          value={supportGroupForm.cost}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Sort Order</Label>
+                        <Input
+                          name="sort_order"
+                          type="number"
+                          value={supportGroupForm.sort_order}
+                          onChange={handleSupportGroupFormChange}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-6">
+                        <input
+                          type="checkbox"
+                          name="is_active"
+                          checked={supportGroupForm.is_active}
+                          onChange={handleSupportGroupFormChange}
+                          id="is_active"
+                        />
+                        <Label htmlFor="is_active">Active</Label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        name="description"
+                        value={supportGroupForm.description}
+                        onChange={handleSupportGroupFormChange}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {submitting
+                          ? "Saving..."
+                          : editingSupportGroup
+                          ? "Update"
+                          : "Create"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowSupportGroupForm(false);
+                          setEditingSupportGroup(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="activities">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Community Activities</CardTitle>
+                <Button
+                  onClick={() => {
+                    setShowActivityForm(true);
+                    setEditingActivity(null);
+                    setActivityForm({
+                      id: null,
+                      name: "",
+                      description: "",
+                      location: "",
+                      schedule: "",
+                      icon: "",
+                      color: "",
+                      cost: "",
+                      age_group: "",
+                      is_active: true,
+                      sort_order: 0,
+                    });
+                  }}
+                >
+                  + Add Activity
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {activityError && (
+                  <div className="text-red-600 mb-2">{activityError}</div>
+                )}
+                {loadingActivities ? (
+                  <div className="py-8 text-center text-slate-500">
+                    Loading...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border text-sm">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="p-2 border">Name</th>
+                          <th className="p-2 border">Location</th>
+                          <th className="p-2 border">Schedule</th>
+                          <th className="p-2 border">Cost</th>
+                          <th className="p-2 border">Age Group</th>
+                          <th className="p-2 border">Active</th>
+                          <th className="p-2 border">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activities.map((activity: any) => (
+                          <tr key={activity.id} className="border-b">
+                            <td className="p-2 border font-medium">
+                              {activity.name}
+                            </td>
+                            <td className="p-2 border">{activity.location}</td>
+                            <td className="p-2 border">{activity.schedule}</td>
+                            <td className="p-2 border">{activity.cost}</td>
+                            <td className="p-2 border">{activity.age_group}</td>
+                            <td className="p-2 border text-center">
+                              {activity.is_active ? "Yes" : "No"}
+                            </td>
+                            <td className="p-2 border text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditActivity(activity)}
+                                className="mr-2"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handleDeleteActivity(activity.id)
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Form for add/edit */}
+                {showActivityForm && (
+                  <form
+                    onSubmit={handleActivitySubmit}
+                    className="mt-8 space-y-4 bg-slate-50 p-6 rounded-lg border"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          name="name"
+                          value={activityForm.name}
+                          onChange={handleActivityFormChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label>Location</Label>
+                        <Input
+                          name="location"
+                          value={activityForm.location}
+                          onChange={handleActivityFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Schedule</Label>
+                        <Input
+                          name="schedule"
+                          value={activityForm.schedule}
+                          onChange={handleActivityFormChange}
+                        />
+                      </div>
+                      <div>
+                        <Label>Icon</Label>
+                        <Input
+                          name="icon"
+                          value={activityForm.icon}
+                          onChange={handleActivityFormChange}
+                          placeholder="e.g., Palette, Users, Gamepad2"
+                        />
+                      </div>
+                      <div>
+                        <Label>Color</Label>
+                        <Input
+                          name="color"
+                          value={activityForm.color}
+                          onChange={handleActivityFormChange}
+                          placeholder="e.g., purple, blue, green"
+                        />
+                      </div>
+                      <div>
+                        <Label>Cost</Label>
+                        <Input
+                          name="cost"
+                          value={activityForm.cost}
+                          onChange={handleActivityFormChange}
+                          placeholder="e.g., Free, $15 per session"
+                        />
+                      </div>
+                      <div>
+                        <Label>Age Group</Label>
+                        <Input
+                          name="age_group"
+                          value={activityForm.age_group}
+                          onChange={handleActivityFormChange}
+                          placeholder="e.g., All ages, Adults, Teens & Adults"
+                        />
+                      </div>
+                      <div>
+                        <Label>Sort Order</Label>
+                        <Input
+                          name="sort_order"
+                          type="number"
+                          value={activityForm.sort_order}
+                          onChange={handleActivityFormChange}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-6">
+                        <input
+                          type="checkbox"
+                          name="is_active"
+                          checked={activityForm.is_active}
+                          onChange={handleActivityFormChange}
+                          id="activity_is_active"
+                        />
+                        <Label htmlFor="activity_is_active">Active</Label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        name="description"
+                        value={activityForm.description}
+                        onChange={handleActivityFormChange}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {submitting
+                          ? "Saving..."
+                          : editingActivity
+                          ? "Update"
+                          : "Create"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowActivityForm(false);
+                          setEditingActivity(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="services">
+            <Card>
+              <CardHeader>
+                <CardTitle>Community Services</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Manage services here. (CRUD UI coming soon)</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="coping">
+            <Card>
+              <CardHeader>
+                <CardTitle>Coping Strategies</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Manage coping strategies here. (CRUD UI coming soon)</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="faqs">
+            <Card>
+              <CardHeader>
+                <CardTitle>Help FAQs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Manage FAQs here. (CRUD UI coming soon)</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="assessments">
+            <Card>
+              <CardHeader>
+                <CardTitle>Assessment Types & Questions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>
+                  Manage assessment types and questions here. (CRUD UI coming
+                  soon)
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="communication">
+            <Card>
+              <CardHeader>
+                <CardTitle>Communication Cards & Phrases</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>
+                  Manage communication cards and phrases here. (CRUD UI coming
+                  soon)
+                </p>
               </CardContent>
             </Card>
           </TabsContent>

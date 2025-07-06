@@ -57,125 +57,43 @@ export default function AppointmentsPage() {
   const [isBooking, setIsBooking] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch doctors from API
+  // Fetch doctors and appointments from API
   useEffect(() => {
-    const fetchDoctors = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("/api/doctors");
-        if (response.ok) {
-          const data = await response.json();
-          setProviders(data.doctors || []);
+        // Fetch doctors
+        const doctorsResponse = await fetch("/api/doctors");
+        if (doctorsResponse.ok) {
+          const doctorsData = await doctorsResponse.json();
+          setProviders(doctorsData.doctors || []);
         } else {
           console.error("Failed to fetch doctors");
-          // Fallback to hardcoded providers if API fails
-          setProviders([
-            {
-              id: "dr-smith",
-              name: "Dr. Sarah Smith",
-              specialty: "Autism Specialist",
-              location: "Downtown Medical Center",
-              rating: "4.9",
-              experience: "15+ years",
-              description:
-                "Specializes in autism diagnosis and support for adults and children",
-            },
-            {
-              id: "dr-johnson",
-              name: "Dr. Michael Johnson",
-              specialty: "Behavioral Therapist",
-              location: "Community Health Center",
-              rating: "4.8",
-              experience: "12+ years",
-              description:
-                "Expert in behavioral interventions and coping strategies",
-            },
-            {
-              id: "dr-williams",
-              name: "Dr. Lisa Williams",
-              specialty: "Occupational Therapist",
-              location: "Therapy Associates",
-              rating: "4.9",
-              experience: "10+ years",
-              description:
-                "Focuses on sensory processing and daily living skills",
-            },
-          ]);
+          setProviders([]);
+        }
+
+        // Fetch user's appointments
+        const appointmentsResponse = await fetch("/api/appointments");
+        if (appointmentsResponse.ok) {
+          const appointmentsData = await appointmentsResponse.json();
+          setUpcomingAppointments(appointmentsData.appointments || []);
+        } else {
+          console.error("Failed to fetch appointments");
+          setUpcomingAppointments([]);
         }
       } catch (error) {
-        console.error("Error fetching doctors:", error);
-        // Fallback to hardcoded providers
-        setProviders([
-          {
-            id: "dr-smith",
-            name: "Dr. Sarah Smith",
-            specialty: "Autism Specialist",
-            location: "Downtown Medical Center",
-            rating: "4.9",
-            experience: "15+ years",
-            description:
-              "Specializes in autism diagnosis and support for adults and children",
-          },
-          {
-            id: "dr-johnson",
-            name: "Dr. Michael Johnson",
-            specialty: "Behavioral Therapist",
-            location: "Community Health Center",
-            rating: "4.8",
-            experience: "12+ years",
-            description:
-              "Expert in behavioral interventions and coping strategies",
-          },
-          {
-            id: "dr-williams",
-            name: "Dr. Lisa Williams",
-            specialty: "Occupational Therapist",
-            location: "Therapy Associates",
-            rating: "4.9",
-            experience: "10+ years",
-            description:
-              "Focuses on sensory processing and daily living skills",
-          },
-        ]);
+        console.error("Error fetching data:", error);
+        setProviders([]);
+        setUpcomingAppointments([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDoctors();
+    fetchData();
   }, []);
-
-  const fallbackProviders = [
-    {
-      id: "dr-smith",
-      name: "Dr. Sarah Smith",
-      specialty: "Autism Specialist",
-      location: "Downtown Medical Center",
-      rating: "4.9",
-      experience: "15+ years",
-      description:
-        "Specializes in autism diagnosis and support for adults and children",
-    },
-    {
-      id: "dr-johnson",
-      name: "Dr. Michael Johnson",
-      specialty: "Behavioral Therapist",
-      location: "Community Health Center",
-      rating: "4.8",
-      experience: "12+ years",
-      description: "Expert in behavioral interventions and coping strategies",
-    },
-    {
-      id: "dr-williams",
-      name: "Dr. Lisa Williams",
-      specialty: "Occupational Therapist",
-      location: "Therapy Associates",
-      rating: "4.9",
-      experience: "10+ years",
-      description: "Focuses on sensory processing and daily living skills",
-    },
-  ];
 
   const appointmentTypes = [
     { value: "initial", label: "Initial Consultation", duration: "60 min" },
@@ -201,35 +119,71 @@ export default function AppointmentsPage() {
     "4:00 PM",
   ];
 
-  const upcomingAppointments = [
-    {
-      id: 1,
-      provider: "Dr. Sarah Smith",
-      date: "March 15, 2024",
-      time: "10:00 AM",
-      type: "Follow-up Visit",
-      location: "Downtown Medical Center",
-      status: "confirmed",
-    },
-    {
-      id: 2,
-      provider: "Dr. Lisa Williams",
-      date: "March 22, 2024",
-      time: "2:30 PM",
-      type: "Therapy Session",
-      location: "Therapy Associates",
-      status: "pending",
-    },
-  ];
-
-  const handleBookAppointment = () => {
+  const handleBookAppointment = async () => {
     setIsBooking(true);
-    // Simulate booking process
-    setTimeout(() => {
-      setIsBooking(false);
+    try {
+      // Combine date and time into a single ISO string
+      const appointmentDateTime = new Date(
+        `${selectedDate}T${convertTo24Hour(selectedTime)}`
+      ).toISOString();
+
+      const response = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider_id: selectedProvider,
+          appointment_date: appointmentDateTime,
+          appointment_type: appointmentType,
+          duration: getAppointmentDuration(appointmentType),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to book appointment");
+      }
+
       setShowConfirmation(true);
-    }, 2000);
+      // Refresh appointments
+      const appointmentsResponse = await fetch("/api/appointments");
+      if (appointmentsResponse.ok) {
+        const appointmentsData = await appointmentsResponse.json();
+        setUpcomingAppointments(appointmentsData.appointments || []);
+      }
+    } catch (error: any) {
+      alert(error.message || "Failed to book appointment");
+    } finally {
+      setIsBooking(false);
+    }
   };
+
+  // Helper to convert 12-hour time to 24-hour format for ISO string
+  function convertTo24Hour(time12h: string) {
+    if (!time12h) return "00:00";
+    const [time, modifier] = time12h.split(" ");
+    let [hours, minutes] = time.split(":");
+    if (hours === "12") hours = "00";
+    if (modifier === "PM") hours = String(parseInt(hours, 10) + 12);
+    return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+  }
+
+  // Helper to get duration from appointment type
+  function getAppointmentDuration(type: string) {
+    switch (type) {
+      case "initial":
+        return 60;
+      case "followup":
+        return 30;
+      case "therapy":
+        return 45;
+      case "assessment":
+        return 90;
+      case "telehealth":
+        return 30;
+      default:
+        return 60;
+    }
+  }
 
   if (loading) {
     return (
@@ -305,8 +259,11 @@ export default function AppointmentsPage() {
                   details.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button asChild className="bg-green-600 hover:bg-green-700">
-                    <Link href="/appointments">View All Appointments</Link>
+                  <Button
+                    onClick={() => setShowConfirmation(false)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    View All Appointments
                   </Button>
                   <Button asChild variant="outline">
                     <Link href="/">Back to Home</Link>
@@ -557,42 +514,65 @@ export default function AppointmentsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {upcomingAppointments.map((appointment) => (
-                  <div
-                    key={appointment.id}
-                    className="p-3 bg-slate-50 rounded-lg space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-slate-800 text-sm">
-                        {appointment.provider}
-                      </h4>
-                      <Badge
-                        variant={
-                          appointment.status === "confirmed"
-                            ? "default"
-                            : "secondary"
-                        }
-                        className="text-xs"
-                      >
-                        {appointment.status}
-                      </Badge>
-                    </div>
-                    <div className="space-y-1 text-xs text-slate-600">
-                      <p className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {appointment.date}
-                      </p>
-                      <p className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {appointment.time}
-                      </p>
-                      <p className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {appointment.location}
-                      </p>
-                    </div>
+                {upcomingAppointments.length === 0 ? (
+                  <div className="text-center py-4 text-slate-500">
+                    No upcoming appointments.
                   </div>
-                ))}
+                ) : (
+                  upcomingAppointments.map((appointment) => {
+                    const dateObj = appointment.appointment_date
+                      ? new Date(appointment.appointment_date)
+                      : null;
+                    const dateStr = dateObj ? dateObj.toLocaleDateString() : "";
+                    const timeStr = dateObj
+                      ? dateObj.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "";
+                    return (
+                      <div
+                        key={appointment.id}
+                        className="p-3 bg-slate-50 rounded-lg space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-slate-800 text-sm">
+                            {appointment.provider_name || "Provider"}
+                          </h4>
+                          <Badge
+                            variant={
+                              appointment.status === "confirmed"
+                                ? "default"
+                                : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {appointment.status}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1 text-xs text-slate-600">
+                          <p className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {dateStr}
+                          </p>
+                          <p className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {timeStr}
+                          </p>
+                          <p className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {appointment.provider_address ||
+                              "Location not specified"}
+                          </p>
+                          <p className="flex items-center gap-1">
+                            <span>Type:</span>
+                            <span>{appointment.appointment_type}</span>
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
                 <Button
                   asChild
                   variant="outline"
